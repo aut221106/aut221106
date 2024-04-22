@@ -1,0 +1,42 @@
+import requests
+from bs4 import BeautifulSoup
+
+def get_imdb_reviews(movie_title):
+    # Format the movie title for the IMDb URL
+    formatted_title = '+'.join(movie_title.split())
+    url = f'https://www.imdb.com/title/tt/find?q={formatted_title}&s=tt&ttype=ft&ref_=fn_ft'
+
+    # Send a GET request to the IMDb search page
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Find the first search result link
+        result = soup.find('td', class_='result_text')
+        if result:
+            # Extract the movie's IMDb ID from the link
+            movie_id = result.a['href'].split('/')[2]
+
+            # Construct URL for the movie's review page
+            review_url = f'https://www.imdb.com/title/{movie_id}/reviews'
+            
+            # Send a GET request to the movie's review page
+            review_response = requests.get(review_url)
+            if review_response.status_code == 200:
+                review_soup = BeautifulSoup(review_response.content, 'html.parser')
+
+                # Extract and print reviews
+                reviews = review_soup.find_all('div', class_='text show-more__control')
+                for review in reviews:
+                    print(review.text.strip())
+            else:
+                print('Failed to fetch reviews.')
+        else:
+            print('Movie not found on IMDb.')
+    else:
+        print('Failed to connect to IMDb.')
+
+# Example usage
+movie_title = 'The Shawshank Redemption'
+get_imdb_reviews(movie_title)
